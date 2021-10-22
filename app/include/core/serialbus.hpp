@@ -14,15 +14,16 @@
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/scoped_thread.hpp>
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
 #include <functional>
 #include <atomic>
 #include <boost/smart_ptr.hpp>
 #include <map>
 #include <queue>
 #include <vector>
-#include "json.hpp"
-#include "safeq.hpp"
+#include <util/json.hpp>
+#include <core/safeq.hpp>
+#include <core/subport.hpp>
 
 using namespace std;
 using namespace nlohmann;
@@ -30,7 +31,6 @@ using namespace nlohmann;
 
 namespace divelink {
     class serialbus {
-
         public:
             typedef void(*ptrPostProcess)(json&);
 
@@ -74,13 +74,13 @@ namespace divelink {
                 _port.close();
             }
             
-            /* adding sub port class instance */
-            void add_subport(int idx, subport* port){
-                _subport_container.insert(std::make_pair(idx, port));
+
+            void add_subport(const char* portname, divelink::subport* port){
+                _subport_container.insert(std::make_pair(portname, port));
             }
 
-            subport* get_subport(int idx){
-                return _subport_container[idx];
+            divelink::subport* get_subport(const char* portname){
+                return _subport_container[portname];
             }
 
             /* push the write data */
@@ -125,7 +125,7 @@ namespace divelink {
             }
 
         private:
-            char _rbuffer[MAX_READ_BUFFER];
+            char _rbuffer[2048];
             boost::asio::io_service _service;
             boost::shared_ptr<boost::asio::io_service::work> _worker;
             boost::thread_group _tg;
@@ -138,7 +138,7 @@ namespace divelink {
             boost::asio::io_service::strand _io_temperature;
             boost::asio::io_service::strand _io_rpm;
 
-            map<int, subport*> _subport_container; /* port container, use only for sync mode. */
+            map<string, divelink::subport*> _subport_container;
             safeQueue<vector<unsigned char>> _write_buffer;
 
     };

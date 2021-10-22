@@ -16,7 +16,7 @@ GCC := gcc
 LD_LIBRARY_PATH += -L./lib/x86_64
 OUTDIR		= ./bin/
 BUILDDIR		= ./bin/
-INCLUDE_DIR = -I./
+INCLUDE_DIR = -I./ -I./include/
 LD_LIBRARY_PATH += -L/usr/local/lib -L./lib/x86_64
 
 

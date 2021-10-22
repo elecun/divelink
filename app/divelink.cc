@@ -4,16 +4,16 @@
  * @author  bh.hwang@iae.re.kr
  */
 
-#include "cxxopts.hpp"
-#include "spdlog/spdlog.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/fmt/bin_to_hex.h"
+#include "include/util/cxxopts.hpp"
+#include "include/spdlog/spdlog.h"
+#include "include/spdlog/sinks/stdout_color_sinks.h"
+#include "include/spdlog/fmt/bin_to_hex.h"
 #include <csignal>
 #include <array>
 #include <deque>
 #include <sys/types.h>
 #include <unistd.h>
-#include "json.hpp"
+#include "include/util/json.hpp"
 #include <map>
 #include <string>
 
@@ -25,7 +25,7 @@
 #include <boost/bind.hpp>
 
 #include "mosquitto/mosquitto.h"
-#include "serialbus.hpp"
+#include "core/serialbus.hpp"
 #include "core/sensor.hpp"
 
 using namespace std;
@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
         if(!_serialbus){
             _serialbus = new divelink::serialbus(_device_port.c_str(), _baudrate);
             _serialbus->set_postprocess(postprocess);
-            _serialbus->add_subport(5, new divelink::sensor());
+            _serialbus->add_subport("sensor", new divelink::sensor());
             _serialbus->start();
         }
 
