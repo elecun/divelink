@@ -84,8 +84,6 @@ namespace divelink {
                             u.value = ((_qbuffer[33]&0xff)<<24)|((_qbuffer[32]&0xff)<<16)|((_qbuffer[31]&0xff)<<8)|(_qbuffer[30]&0xff);
                             data["temperature"] = u.f_value;
 
-                            spdlog::info("data : {}", data.dump());
-
                             //remove
                             for(int i=0;i<pack_size;i++)
                                 _qbuffer.pop_front();

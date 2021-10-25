@@ -100,7 +100,7 @@ namespace divelink {
 
                                 //read only
                                 json response;
-                                sub.second->request(&_port, response);
+                                sub.second->readsome(&_port, response);
                                 call_post(response);
                             }
                         }
