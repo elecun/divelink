@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
     try {
 
         mosquitto_lib_init();
-        _mqtt = mosquitto_new("jstec", true, 0);
+        _mqtt = mosquitto_new("divelink", true, 0);
 
         if(_mqtt){
             spdlog::info("connecting to broker...");

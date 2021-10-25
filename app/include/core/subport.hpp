@@ -18,6 +18,8 @@ namespace divelink {
     class subport {
         public:
             virtual void request(boost::asio::serial_port* bus, json& response) = 0;
+            virtual void readsome(boost::asio::serial_port* bus, json& data) = 0;
+            
             virtual int read(unsigned char* buffer) = 0;
             virtual bool write(unsigned char* buffer, int size) = 0;
     };

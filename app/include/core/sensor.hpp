@@ -12,6 +12,7 @@
 #include <core/subport.hpp>
 #include <spdlog/fmt/bin_to_hex.h>
 #include <util/json.hpp>
+#include <deque>
 
 
 using namespace std;
@@ -26,7 +27,6 @@ namespace divelink {
 
         public:
             sensor(){
-
             }
             virtual ~sensor() { }
 
@@ -36,6 +36,75 @@ namespace divelink {
 
             virtual bool write(unsigned char* buffer, int size){
                 return false;
+            }
+
+            virtual void readsome(boost::asio::serial_port* bus, json& data){
+
+                const int max_len = 1024;
+                unsigned char rbuffer[max_len] = {0, };
+                int read_len = bus->read_some(boost::asio::buffer(rbuffer, max_len));
+
+                //insert to queue
+                for(int i=0;i<read_len;i++){
+                    _qbuffer.push_back(rbuffer[i]);
+                }
+
+                union {
+                    unsigned long value;
+                    float f_value;
+                } u;
+
+                const int pack_size = 36;
+
+                //process with queue
+                while(1){
+                    if(_qbuffer.size()>=pack_size){
+                        if(_qbuffer[0]==0x02 && _qbuffer[1]==0x55 && _qbuffer[34]==0x03 && _qbuffer[35]==0xaa){
+                            u.value = ((_qbuffer[5]&0xff)<<24)|((_qbuffer[4]&0xff)<<16)|((_qbuffer[3]&0xff)<<8)|(_qbuffer[2]&0xff);
+                            data["yaw"] = u.f_value;
+                            
+                            u.value = ((_qbuffer[9]&0xff)<<24)|((_qbuffer[8]&0xff)<<16)|((_qbuffer[7]&0xff)<<8)|(_qbuffer[6]&0xff);
+                            data["pitch"] = u.f_value;
+
+                            u.value = ((_qbuffer[13]&0xff)<<24)|((_qbuffer[12]&0xff)<<16)|((_qbuffer[11]&0xff)<<8)|(_qbuffer[10]&0xff);
+                            data["roll"] = u.f_value;
+
+                            u.value = ((_qbuffer[17]&0xff)<<24)|((_qbuffer[16]&0xff)<<16)|((_qbuffer[15]&0xff)<<8)|(_qbuffer[14]&0xff);
+                            data["x-acc"] = u.f_value;
+
+                            u.value = ((_qbuffer[21]&0xff)<<24)|((_qbuffer[20]&0xff)<<16)|((_qbuffer[19]&0xff)<<8)|(_qbuffer[18]&0xff);
+                            data["y-acc"] = u.f_value;
+
+                            u.value = ((_qbuffer[25]&0xff)<<24)|((_qbuffer[24]&0xff)<<16)|((_qbuffer[23]&0xff)<<8)|(_qbuffer[22]&0xff);
+                            data["z-acc"] = u.f_value;
+
+                            u.value = ((_qbuffer[29]&0xff)<<24)|((_qbuffer[28]&0xff)<<16)|((_qbuffer[27]&0xff)<<8)|(_qbuffer[26]&0xff);
+                            data["pressure"] = u.f_value;
+
+                            u.value = ((_qbuffer[33]&0xff)<<24)|((_qbuffer[32]&0xff)<<16)|((_qbuffer[31]&0xff)<<8)|(_qbuffer[30]&0xff);
+                            data["temperature"] = u.f_value;
+
+                            spdlog::info("data : {}", data.dump());
+
+                            //remove
+                            for(int i=0;i<pack_size;i++)
+                                _qbuffer.pop_front();
+                        }
+                        else {
+                            _qbuffer.pop_front();
+                        }
+                    }
+                    else
+                        break;
+                }
+
+
+                vector<char> rpacket(rbuffer, rbuffer+read_len);
+
+                //process received data
+
+                boost::this_thread::sleep_for(boost::chrono::milliseconds(100));
+
             }
 
             virtual void request(boost::asio::serial_port* bus, json& response){
@@ -67,6 +136,12 @@ namespace divelink {
             }
 
         private:
+
+
+
+            json parse(unsigned char* data, int len){
+
+            }
 
             float parse_value(unsigned char* data, int size){
 
@@ -111,6 +186,7 @@ namespace divelink {
 
         private:
             int _id = 0;
+            std::deque<unsigned char> _qbuffer;
     };
 } /* end of namespace */
 

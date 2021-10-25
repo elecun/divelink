@@ -97,17 +97,11 @@ namespace divelink {
                     while(_operation){
                         if(_port.is_open()){
                             for(auto& sub: _subport_container){
+
+                                //read only
                                 json response;
                                 sub.second->request(&_port, response);
                                 call_post(response);
-
-                                if(_write_buffer.size()){
-                                    vector<unsigned char> packet;
-                                    while(_write_buffer.consume(packet)){
-                                        _port.write_some(boost::asio::buffer(packet, packet.size()));
-                                        boost::this_thread::sleep_for(boost::chrono::milliseconds(200));
-                                    }
-                                }
                             }
                         }
                         else
