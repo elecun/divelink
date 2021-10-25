@@ -39,15 +39,18 @@ int _pub_inteval_sec = 1;
 
 
 static void postprocess(json& msg){
-    string strdata = msg.dump();
-    spdlog::info("publishing : {}", strdata);
-    // if(_mqtt){
-    //     int ret = mosquitto_publish(_mqtt, nullptr, MEX_LOADCELL_VALUE_TOPIC, strdata.size(), strdata.c_str(), 2, false);
-    //     mosquitto_loop(_mqtt, 3, 1);
-    //     if(ret){
-    //         spdlog::error("Broker connection error");
-    //     }
-    // }
+    if(!msg.empty()){
+        string strdata = msg.dump();
+        spdlog::info("publishing : {}", strdata);
+
+        if(_mqtt){
+            int ret = mosquitto_publish(_mqtt, nullptr, "divelink/sensor", strdata.size(), strdata.c_str(), 2, false);
+            mosquitto_loop(_mqtt, 3, 1);
+            if(ret){
+                spdlog::error("Broker connection error");
+            }
+        }
+    }
 }
 
 void subscribe_callback(struct mosquitto *mosq, void *userdata, int mid, int qos_count, const int *granted_qos)
