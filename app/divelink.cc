@@ -44,7 +44,7 @@ static void postprocess(json& msg){
         spdlog::info("publishing : {}", strdata);
 
         if(_mqtt){
-            int ret = mosquitto_publish(_mqtt, nullptr, "divelink/sensor", strdata.size(), strdata.c_str(), 2, false);
+            int ret = mosquitto_publish(_mqtt, nullptr, "divelink/sensors", strdata.size(), strdata.c_str(), 2, false);
             mosquitto_loop(_mqtt, 3, 1);
             if(ret){
                 spdlog::error("Broker connection error");
