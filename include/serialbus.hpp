@@ -1,7 +1,12 @@
 /**
- * @file    serialbus.hpp
- * @brief   serial(RS485) commnunocation with boost library
- * @author  Byunghun Hwang
+ * @file serialbus.hpp
+ * @author Byunghun Hwang (bh.hwang@iae.re.kr)
+ * @brief Divelink serial bus interface
+ * @version 0.1
+ * @date 2022-04-27
+ * 
+ * @copyright Copyright (c) 2022
+ * 
  */
 
 #ifndef _DIVELINK_SERIAL_BUS_HPP_
@@ -21,20 +26,19 @@
 #include <map>
 #include <queue>
 #include <vector>
-#include <util/json.hpp>
-#include <core/safeq.hpp>
-#include <core/subport.hpp>
+#include "json.hpp"
+#include "safeq.hpp"
 
 using namespace std;
 using namespace nlohmann;
 
-
 namespace divelink {
+
     class serialbus {
         public:
             typedef void(*ptrPostProcess)(json&);
 
-            serialbus(const char* dev, int baudrate):_service(), _port(_service, dev), _operation(false), _io_relay(_service), _io_rpm(_service), _io_temperature(_service){
+            serialbus(const char* dev, int baudrate):_service(), _port(_service, dev), _operation(false){
 
                 _port.set_option(boost::asio::serial_port_base::parity());	// default none
                 _port.set_option(boost::asio::serial_port_base::character_size(8));
@@ -57,7 +61,7 @@ namespace divelink {
 
             }
 
-            void start(){ /* start read */
+            void open(){ /* start read */
                 _operation = true;
                 _worker.reset(new boost::asio::io_service::work(_service));
                 assign();
@@ -65,7 +69,7 @@ namespace divelink {
                 _tg.create_thread([&](void){_service.run();});
             }
 
-            void stop(){ /* stop read */
+            void close(){ /* stop read */
                 _operation = false;
                 _worker.reset();
                 _service.stop();
@@ -74,14 +78,6 @@ namespace divelink {
                 _port.close();
             }
             
-
-            void add_subport(const char* portname, divelink::subport* port){
-                _subport_container.insert(std::make_pair(portname, port));
-            }
-
-            divelink::subport* get_subport(const char* portname){
-                return _subport_container[portname];
-            }
 
             /* push the write data */
             void push_write(unsigned char* buffer, int size){
@@ -96,13 +92,13 @@ namespace divelink {
                 boost::function<void(void)> read_handler = [&](void) {
                     while(_operation){
                         if(_port.is_open()){
-                            for(auto& sub: _subport_container){
+                            // for(auto& sub: _subport_container){
 
-                                //read only
-                                json response;
-                                sub.second->readsome(&_port, response);
-                                call_post(response);
-                            }
+                            //     //read only
+                            //     json response;
+                            //     sub.second->readsome(&_port, response);
+                            //     call_post(response);
+                            // }
                         }
                         else
                             spdlog::error("port is not opened");
@@ -128,11 +124,6 @@ namespace divelink {
             ptrPostProcess _post_proc;
             atomic<bool> _operation;
 
-            boost::asio::io_service::strand _io_relay;
-            boost::asio::io_service::strand _io_temperature;
-            boost::asio::io_service::strand _io_rpm;
-
-            map<string, divelink::subport*> _subport_container;
             safeQueue<vector<unsigned char>> _write_buffer;
 
     };
