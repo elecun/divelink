@@ -11,13 +11,11 @@
 
 
 
-
 #include "../include/cxxopts.hpp"
 #include "../include/json.hpp"
 #include "../include/spdlog/spdlog.h"
 #include "../include/spdlog/sinks/stdout_color_sinks.h"
 #include "../include/serialbus.hpp"
-#include <mosquitto.h>
 #include <csignal>
 #include <string>
 
@@ -96,35 +94,54 @@ int main(int argc, char* argv[])
     int _baudrate = 9600;
 
     /* command options */
-    while((optc=getopt(argc, argv, "p:b:t:h"))!=-1)
+    while((optc=getopt(argc, argv, "p:b:s:h"))!=-1)
     {
         switch(optc){
-            case 'p': { /* device port */
+            case 'p': { /* Device Port */
                 _device_port = optarg;
             } break;
-            case 'b': { /* baudrate */
+            case 'b': { /* Baudrate */
                 _baudrate = atoi(optarg);
             } break;
-            case 't': { /* target ip to pub */
+            case 's': { /* Share Data */
                 _mqtt_broker = optarg;
             } break;
-            
             case 'h':
             default:{
                 cout << fmt::format("Divelink Middleware for M64 Acoustic Modem (built {}/{})", __DATE__, __TIME__) << endl;
-                cout << "Usage: divelink_m64 [-p port] [-b baudrate] [-t mqtt broker address] [-h help]" << endl;
+                cout << "Usage: divelink_m64 [-p port] [-b baudrate] [-s Broker Address to share data] [-h help]" << endl;
                 exit(EXIT_FAILURE);
             }
             break;
         }
     }
 
-    /* show arguments */
+    /* show arguments by user */
     spdlog::info("> set device port : {}", _device_port);
     spdlog::info("> set port baudrate : {}", _baudrate);
-    spdlog::info("> set broker IP : {}", _mqtt_broker);
 
     try {
+
+        // mosquitto_lib_init();
+        // _mqtt = mosquitto_new("divelink", true, 0);
+
+        // if(_mqtt){
+		//     mosquitto_connect_callback_set(_mqtt, connect_callback);
+		//     mosquitto_message_callback_set(_mqtt, message_callback);
+        //     mosquitto_subscribe_callback_set(_mqtt, subscribe_callback);
+        //     _mqtt_rc = mosquitto_connect(_mqtt, _mqtt_broker.c_str(), 1883, 60);
+        //     spdlog::info("mqtt connection : {}", _mqtt_rc);
+        //     mosquitto_loop_start(_mqtt);
+        // }
+        
+        if(!_serialbus){
+            _serialbus = new divelink::serialbus(_device_port.c_str(), _baudrate);
+            _serialbus->set_postprocess(postprocess);
+            _serialbus->add_subport("sensor", new divelink::sensor());
+            _serialbus->start();
+        }
+
+        ::pause();
 
     }
     catch(const std::exception& e){
